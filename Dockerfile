@@ -1,33 +1,21 @@
-# ── Build Stage ──────────────────────────────────────────────
-FROM rust:1.86-slim AS builder
+# Single-stage build — avoids missing shared library issues in slim runtime
+FROM rust:1.86
 
-# Install system deps needed by diesel (postgres)
+# Install libpq and SSL deps
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     pkg-config \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Copy only backend source
-COPY backend/ .
-
-# Build release binary
-RUN cargo build --release
-
-# ── Runtime Stage ─────────────────────────────────────────────
-FROM debian:bookworm-slim AS runtime
-
-RUN apt-get update && apt-get install -y \
-    libpq5 \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy binary from builder
-COPY --from=builder /app/target/release/backend /app/backend
+# Copy backend source
+COPY backend/ .
+
+# Build release binary
+RUN cargo build --release
 
 EXPOSE 8080
 
-CMD ["/app/backend"]
+CMD ["./target/release/backend"]
