@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: nfc-db
+    environment:
+      POSTGRES_USER: sqeewz
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: nfc_restaurant
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sqeewz -d nfc_restaurant" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: nfc-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://sqeewz:password@db/nfc_restaurant
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: nfc-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
