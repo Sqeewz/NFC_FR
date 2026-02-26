@@ -1,5 +1,5 @@
 # ── Build Stage ──────────────────────────────────────────────
-FROM rust:1.85-slim AS builder
+FROM rust:1.86-slim AS builder
 
 # Install system deps needed by diesel (postgres)
 RUN apt-get update && apt-get install -y \
